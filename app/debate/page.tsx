@@ -481,7 +481,7 @@ function DebatePageInner() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 lg:ml-20 py-6 space-y-6">
+      <div className="max-w-7xl mx-auto px-4 py-6 space-y-6">
         {/* Verdict card (shown when verdict phase starts) */}
         {(verdictStreaming || verdict) && (
           <div ref={verdictRef}>

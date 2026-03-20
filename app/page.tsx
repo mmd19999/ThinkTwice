@@ -244,7 +244,7 @@ export default function Home() {
                   placeholder={"e.g. I'm a CS student trying to decide between going to grad school, getting a job at a startup, or freelancing. I have $20k in savings, no debt, and I value work-life balance. I'm based in Berlin and would prefer to stay in Europe."}
                   rows={5}
                   disabled={parsing || loading}
-                  className="w-full rounded-xl bg-zinc-800 border border-zinc-700 px-3 py-2.5 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-500 transition resize-none disabled:opacity-50"
+                  className="w-full rounded-xl bg-zinc-800 border border-zinc-700 px-3 py-2.5 text-sm text-white placeholder-zinc-500 focus:outline-none focus:border-zinc-500 transition resize-y disabled:opacity-50"
                 />
                 <p className="text-[10px] text-zinc-500">
                   Just explain what you&apos;re deciding. AI will figure out the options, context, and assign expert advocates.
@@ -306,7 +306,7 @@ export default function Home() {
                       value={parsedContext}
                       onChange={(e) => setParsedContext(e.target.value)}
                       rows={2}
-                      className="w-full rounded-xl bg-zinc-800 border border-zinc-700 px-3 py-2 text-xs text-zinc-300 placeholder-zinc-500 focus:outline-none focus:border-zinc-500 transition resize-none"
+                      className="w-full rounded-xl bg-zinc-800 border border-zinc-700 px-3 py-2 text-xs text-zinc-300 placeholder-zinc-500 focus:outline-none focus:border-zinc-500 transition resize-y"
                     />
                   </div>
                 </div>

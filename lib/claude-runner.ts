@@ -8,10 +8,36 @@ import { spawn } from 'child_process';
 const PROCESS_TIMEOUT_MS = 5 * 60 * 1000;
 
 /**
+ * Extract text content from a result event's result field.
+ * Handles both string and object formats.
+ */
+function extractResultText(result: unknown): string {
+  if (typeof result === 'string') return result;
+  if (result && typeof result === 'object') {
+    const r = result as Record<string, unknown>;
+    // Handle { text: "..." } format
+    if (typeof r.text === 'string') return r.text;
+    // Handle { content: [{ type: "text", text: "..." }] } format
+    if (Array.isArray(r.content)) {
+      return r.content
+        .filter((c: Record<string, unknown>) => c.type === 'text' && typeof c.text === 'string')
+        .map((c: Record<string, unknown>) => c.text)
+        .join('');
+    }
+  }
+  return '';
+}
+
+/**
  * Runs a claude -p subprocess and streams text chunks via onChunk callback.
  * Returns the full accumulated response when complete.
  *
  * Key: we delete CLAUDECODE from env so nested claude instances are allowed.
+ *
+ * IMPORTANT: We do NOT use --include-partial-messages because it causes
+ * intermediate turn text (e.g., "I'll research...") to be streamed and can
+ * trigger premature resolution before tool-use turns complete. Without it,
+ * only the FINAL assistant message is streamed — which is the actual response.
  */
 export function runClaude(
   prompt: string,
@@ -34,7 +60,6 @@ export function runClaude(
         '-p', prompt,
         '--output-format', 'stream-json',
         '--verbose',
-        '--include-partial-messages',
         '--allowedTools', 'WebSearch,WebFetch',
         '--model', model,
         '--max-turns', '3',
@@ -108,15 +133,24 @@ export function runClaude(
         }
 
         // result event signals completion — may contain the final text
-        if (event.type === 'result' && !resolved) {
-          // Try to extract text from result if we have no streaming text
-          if (!fullText && typeof event.result === 'string') {
-            fullText = event.result;
-            onChunk(event.result);
+        if (event.type === 'result') {
+          const resultText = extractResultText(event.result);
+
+          // Use the result text if it's more complete than what we streamed
+          if (resultText && resultText.length > fullText.length) {
+            const newContent = resultText.slice(fullText.length);
+            if (newContent) onChunk(newContent);
+            fullText = resultText;
+          } else if (!fullText && resultText) {
+            fullText = resultText;
+            onChunk(resultText);
           }
-          resolved = true;
-          clearTimeout(timeoutHandle);
-          resolve(fullText);
+
+          if (!resolved) {
+            resolved = true;
+            clearTimeout(timeoutHandle);
+            resolve(fullText);
+          }
         }
       }
     });

@@ -29,9 +29,11 @@ const CONTINUATION_MAX_ROUNDS = 4;
 
 /**
  * Minimum response length to consider a response "substantive".
- * Below this threshold, we know something went wrong.
+ * Must be high enough to catch planning-only responses like
+ * "I'll research evidence to build the strongest case..." (~90 chars).
+ * A real researched response is typically 500+ chars.
  */
-const MIN_RESPONSE_LENGTH = 50;
+const MIN_RESPONSE_LENGTH = 200;
 
 // ── Structured Output Parsers ────────────────────────────────────────────────
 
@@ -148,30 +150,32 @@ async function runAdvocateRound(
     model
   );
 
-  // If response is too short (likely failed), retry once with a simpler prompt
+  // If response is too short (likely a planning-only stub or tool failure), retry
   if (result.length < MIN_RESPONSE_LENGTH) {
     console.error(
       `[orchestrator] Advocate ${agentIndex} ("${option}") produced only ${result.length} chars in round ${roundNumber}. Retrying with simplified prompt...`
     );
 
-    // Emit a note that we're retrying
+    // Clear the stub text and show retry notice
     emit({
       type: 'agent_chunk',
       agentIndex,
       round: roundNumber,
       phase: 'advocate_response',
-      chunk: '\n\n*[Retrying with fresh research...]*\n\n',
+      chunk: '\n\n---\n\n',
     });
 
     const expertBlock = expertPerspective
       ? ` You are speaking as a ${expertPerspective}.`
       : '';
 
-    // Simplified retry prompt — no history, just the current question
+    // Simplified retry prompt — explicit instruction NOT to just plan, but to respond directly
     const retryPrompt = `You are a debate advocate defending "${option}" against ${allOptions.filter((o) => o !== option).join(', ')}.${expertBlock}
 
 ${context ? `Context: ${context}\n` : ''}
 The judge asks: "${judgeQuestion}"
+
+IMPORTANT: You MUST provide a complete, substantive response with real arguments and evidence. Do NOT just say you will research — provide your actual analysis and arguments NOW.
 
 Research and answer this question with strong evidence favoring "${option}". Use WebSearch to find current data. Keep your response focused and under 600 words.${languageInstruction(language)}`;
 
@@ -189,8 +193,11 @@ Research and answer this question with strong evidence favoring "${option}". Use
       model
     );
 
-    if (retryResult.length > result.length) {
-      result = result + retryResult; // Append retry content
+    // Use the retry result if it's substantive; otherwise keep whatever we have
+    if (retryResult.length >= MIN_RESPONSE_LENGTH) {
+      result = retryResult; // Replace with the better retry result
+    } else if (retryResult.length > result.length) {
+      result = retryResult;
     }
   }
 
