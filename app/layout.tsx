@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Decision Maker",
+  title: "Think Twice",
   description: "AI agents debate your options so you can decide with confidence",
 };
 

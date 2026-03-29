@@ -192,7 +192,7 @@ export default function Home() {
         {/* Hero */}
         <div className="text-center space-y-3">
           <div className="text-5xl mb-2">&#x2696;&#xFE0F;</div>
-          <h1 className="text-3xl font-bold tracking-tight">Decision Maker</h1>
+          <h1 className="text-3xl font-bold tracking-tight">Think Twice</h1>
           <p className="text-zinc-400 text-sm leading-relaxed">
             Can&apos;t decide? AI agents will research and debate each option, then a judge will tell
             you which wins &mdash; with solid reasoning.
